@@ -3,13 +3,14 @@ import { PrismaClient } from '@prisma/client';
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import authenticateToken  from './auth'
 
 const userRouter = express.Router();
 const prisma = new PrismaClient();
 const upload = multer({ dest: 'uploads/' });
 
 // Routes for Profile Creation basic info
-userRouter.post('/basicinfo', async (req, res) => {
+userRouter.post('/basicinfo',authenticateToken , async (req, res) => {
     const { Email, Password, Name, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
     try {
         const user = await prisma.user.create({
@@ -36,7 +37,7 @@ userRouter.post('/basicinfo', async (req, res) => {
 });
 
 // Get my profile route
-userRouter.get('/profile', async (req, res) => {
+userRouter.get('/profile',authenticateToken , async (req, res) => {
     const { username } = req.body;
     try {
         const user = await prisma.user.findUnique({
@@ -52,7 +53,7 @@ userRouter.get('/profile', async (req, res) => {
 });
 
 // Get leaderboard route
-userRouter.get('/leaderboard', async (req, res) => {
+userRouter.get('/leaderboard', authenticateToken ,async (req, res) => {
     try {
         const users = await prisma.user.findMany();
         const usernames = users.map(user => user.username);
@@ -64,7 +65,7 @@ userRouter.get('/leaderboard', async (req, res) => {
 });
 
 // Get all users route
-userRouter.get('/list', async (req, res) => {
+userRouter.get('/list',authenticateToken , async (req, res) => {
     try {
         const users = await prisma.user.findMany();
         res.json(users);
@@ -75,7 +76,7 @@ userRouter.get('/list', async (req, res) => {
 });
 
 // Routes to get Personal Records
-userRouter.get('/personalrecords', async (req, res) => {
+userRouter.get('/personalrecords',authenticateToken , async (req, res) => {
     const { username } = req.body;
     try {
         const user = await prisma.user.findUnique({
@@ -91,7 +92,7 @@ userRouter.get('/personalrecords', async (req, res) => {
 });
 
 // Routes to update basic info (age, height, weight, bodytype, Traininglevel, goal)
-userRouter.put('/update_basicinfo', async (req, res) => {
+userRouter.put('/update_basicinfo',authenticateToken , async (req, res) => {
     const { Email, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
     try {
         const user = await prisma.user.update({
@@ -116,7 +117,7 @@ userRouter.put('/update_basicinfo', async (req, res) => {
 });
 
 //pdf_routes for diet & Exercise
-userRouter.post('/upload/diet:userId', upload.single('file'), async (req, res) => {
+userRouter.post('/upload/diet:userId',authenticateToken , upload.single('file'), async (req, res) => {
     const { userId } = req.params;
     //@ts-ignore
     const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
@@ -137,7 +138,7 @@ userRouter.post('/upload/diet:userId', upload.single('file'), async (req, res) =
     }
 })
 
-userRouter.post('/upload/exercise:userId', upload.single('file'), async (req, res) => {
+userRouter.post('/upload/exercise:userId',authenticateToken , upload.single('file'), async (req, res) => {
     const {userId} = req.params;
     //@ts-ignore
     const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
@@ -157,7 +158,7 @@ userRouter.post('/upload/exercise:userId', upload.single('file'), async (req, re
     }
 })
 
-userRouter.get('/download/diet:userId', async (req, res) => {
+userRouter.get('/download/diet:userId',authenticateToken , async (req, res) => {
     const {userId} = req.params;
     try{
         const diet = await prisma.diet.findUnique({
@@ -175,7 +176,7 @@ userRouter.get('/download/diet:userId', async (req, res) => {
     }               
 });
 
-userRouter.get('/download/exercise:userId', async (req, res) => {
+userRouter.get('/download/exercise:userId',authenticateToken , async (req, res) => {
     const {userId} = req.params;
     try{
         const exercise = await prisma.exercise.findUnique({
@@ -192,8 +193,6 @@ userRouter.get('/download/exercise:userId', async (req, res) => {
         res.status(500).send("Error in downloading the data");
     }               
 });
-
-
 
 export default userRouter;
 
