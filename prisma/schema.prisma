@@ -30,6 +30,7 @@ model User {
   Journey String[]
   Diet Diet[]
   Exercise Exercise[]
+  refcode     String?
 
 }
 

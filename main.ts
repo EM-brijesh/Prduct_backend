@@ -1,7 +1,7 @@
 import express from 'express';
 import userRouter from './users';
-import authRouter from '../backend/auth';
 import bodyParser from 'body-parser';
+import authRouter from './auth';
 
 console.log("Project Initialized");
 const app = express();

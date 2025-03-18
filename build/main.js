@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const users_1 = __importDefault(require("./users"));
 const body_parser_1 = __importDefault(require("body-parser"));
+const auth_1 = __importDefault(require("./auth"));
 console.log("Project Initialized");
 const app = (0, express_1.default)();
 const port = 3000;
@@ -16,4 +17,5 @@ app.get('/test_route', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
+app.use('/auth', auth_1.default);
 app.use('/users', users_1.default);
