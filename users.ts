@@ -1,8 +1,12 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer'
+import path from 'path'
+import fs from 'fs'
 
 const userRouter = express.Router();
 const prisma = new PrismaClient();
+const upload = multer({ dest: 'uploads/' });
 
 // Routes for Profile Creation basic info
 userRouter.post('/basicinfo', async (req, res) => {
@@ -111,30 +115,84 @@ userRouter.put('/update_basicinfo', async (req, res) => {
     }
 });
 
-// Route to add Diet
-userRouter.post('add_diet' ,async (req , res) => {
-    const {username , meal , calories } = req.body;
-    try{
-        const user = await prisma.user.update({
-            where: {
-                username: username
-            },
-            select: {Email: true},
+//pdf_routes for diet & Exercise
+userRouter.post('/upload/diet:userId', upload.single('file'), async (req, res) => {
+    const { userId } = req.params;
+    //@ts-ignore
+    const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
+
+    try {
+        const diet = await prisma.diet.create({
+            //@ts-ignore
             data: {
-                Diet: {
-                    create: {
-                        meal: meal,
-                        calories: calories
-                    }
-                }
+                userId: userId,
+                pdfurl: pdfPath
             }
-        });
-    }catch(error){  
+        })
+        res.status(200).json(diet);
+        console.log("Diet uploaded successfully");
+    } catch (error) {
         console.log(error);
+        res.status(500).send("Error in uploading the data");
     }
 })
 
-// Route to add Workout Plan
+userRouter.post('/upload/exercise:userId', upload.single('file'), async (req, res) => {
+    const {userId} = req.params;
+    //@ts-ignore
+    const pdfPath = path.join(__dirname, 'uploads', req.file.filename);
+    try{
+        const exercise = await prisma.exercise.create({
+            //@ts-ignore
+            data: {
+                userId: userId,
+                pdfurl: pdfPath
+            }
+        })
+        res.status(200).json(exercise);
+        console.log("Exercise uploaded successfully");
+    }catch(error){
+        console.log(error); 
+        res.status(500).send("Error in uploading the data");
+    }
+})
+
+userRouter.get('/download/diet:userId', async (req, res) => {
+    const {userId} = req.params;
+    try{
+        const diet = await prisma.diet.findUnique({
+            //@ts-ignore
+            where: {
+                userId: userId
+            }
+        })
+        const pdfPath = diet?.pdfurl;
+        //@ts-ignore
+        res.download(pdfPath);
+    }catch(error){
+        console.log(error);
+        res.status(500).send("Error in downloading the data");
+    }               
+});
+
+userRouter.get('/download/exercise:userId', async (req, res) => {
+    const {userId} = req.params;
+    try{
+        const exercise = await prisma.exercise.findUnique({
+            //@ts-ignore
+            where: {
+                userId: userId
+            }
+        })
+        const pdfPath = exercise?.pdfurl;
+        //@ts-ignore
+        res.download(pdfPath);
+    }catch(error){
+        console.log(error);
+        res.status(500).send("Error in downloading the data");
+    }               
+});
+
 
 
 export default userRouter;

@@ -41,6 +41,7 @@ model Diet {
   meal      String[]
   calories  Int
   date      DateTime @default(now())
+  pdfurl    String
 }
 
 model Exercise {
@@ -51,6 +52,7 @@ model Exercise {
   workout     String[]
   duration    Int
   date        DateTime @default(now())
+  pdfurl      String
 }
 
 
