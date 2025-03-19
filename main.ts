@@ -2,10 +2,12 @@ import express from 'express';
 import userRouter from './users';
 import bodyParser from 'body-parser';
 import authRouter from './auth';
+import cors from 'cors';
 
 console.log("Project Initialized");
 const app = express();
 const port = 3000;
+app.use(cors());
 app.use(bodyParser.json());
 
 app.get('/test_route', (req, res) => {

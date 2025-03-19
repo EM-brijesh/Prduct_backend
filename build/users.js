@@ -16,19 +16,17 @@ const express_1 = __importDefault(require("express"));
 const client_1 = require("@prisma/client");
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
+const auth_1 = __importDefault(require("./auth"));
 const userRouter = express_1.default.Router();
 const prisma = new client_1.PrismaClient();
 const upload = (0, multer_1.default)({ dest: 'uploads/' });
 // Routes for Profile Creation basic info
-userRouter.post('/basicinfo', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { Email, Password, Name, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
+userRouter.post('/basicinfo', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { age, height, weight, bodytype, Traininglevel, goal, } = req.body;
     try {
         const user = yield prisma.user.create({
+            //@ts-ignore
             data: {
-                Email: Email,
-                Password: Password,
-                username: username,
-                name: Name,
                 age: age,
                 height: height,
                 weight: weight,
@@ -46,7 +44,7 @@ userRouter.post('/basicinfo', (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 }));
 // Get my profile route
-userRouter.get('/profile', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/profile', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username } = req.body;
     try {
         const user = yield prisma.user.findUnique({
@@ -62,7 +60,7 @@ userRouter.get('/profile', (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 }));
 // Get leaderboard route
-userRouter.get('/leaderboard', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/leaderboard', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield prisma.user.findMany();
         const usernames = users.map(user => user.username);
@@ -74,7 +72,7 @@ userRouter.get('/leaderboard', (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 // Get all users route
-userRouter.get('/list', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/list', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield prisma.user.findMany();
         res.json(users);
@@ -85,7 +83,7 @@ userRouter.get('/list', (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 }));
 // Routes to get Personal Records
-userRouter.get('/personalrecords', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/personalrecords', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { username } = req.body;
     try {
         const user = yield prisma.user.findUnique({
@@ -101,32 +99,36 @@ userRouter.get('/personalrecords', (req, res) => __awaiter(void 0, void 0, void 
     }
 }));
 // Routes to update basic info (age, height, weight, bodytype, Traininglevel, goal)
-userRouter.put('/update_basicinfo', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { Email, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
+//@ts-ignore
+userRouter.put('/update_basicinfo', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { age, height, weight, bodytype, traininglevel, goal } = req.body;
+    //@ts-ignore
+    if (!req.user || !req.user.userId) {
+        return res.status(401).json({ message: 'Unauthorized: User not authenticated' });
+    }
+    // Validate input
+    if (age !== undefined && isNaN(age))
+        return res.status(400).json({ message: 'Age must be a number' });
+    if (height !== undefined && isNaN(height))
+        return res.status(400).json({ message: 'Height must be a number' });
+    if (weight !== undefined && isNaN(weight))
+        return res.status(400).json({ message: 'Weight must be a number' });
     try {
-        const user = yield prisma.user.update({
-            where: {
-                username: username
-            },
-            data: {
-                age: age,
-                height: height,
-                weight: weight,
-                bodytype: bodytype,
-                traininglevel: Traininglevel,
-                goal: goal,
-            },
+        const updatedUser = yield prisma.user.update({
+            //@ts-ignore
+            where: { Email: req.user.userId }, // Use `Email` as per schema
+            data: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (age !== undefined && { age })), (height !== undefined && { height })), (weight !== undefined && { weight })), (bodytype !== undefined && { bodytype })), (traininglevel !== undefined && { traininglevel })), (goal !== undefined && { goal })),
         });
-        res.status(200).json(user);
-        console.log("User updated successfully");
+        console.log("User updated successfully:", updatedUser);
+        res.status(200).json({ message: 'User updated successfully', user: updatedUser });
     }
     catch (error) {
-        console.log(error);
-        res.status(500).send("Error in updating the data");
+        console.error('Error updating user:', error);
+        res.status(500).json({ message: 'Error updating user' });
     }
 }));
 //pdf_routes for diet & Exercise
-userRouter.post('/upload/diet:userId', upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.post('/upload/diet:userId', auth_1.default, upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     //@ts-ignore
     const pdfPath = path_1.default.join(__dirname, 'uploads', req.file.filename);
@@ -146,7 +148,7 @@ userRouter.post('/upload/diet:userId', upload.single('file'), (req, res) => __aw
         res.status(500).send("Error in uploading the data");
     }
 }));
-userRouter.post('/upload/exercise:userId', upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.post('/upload/exercise:userId', auth_1.default, upload.single('file'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     //@ts-ignore
     const pdfPath = path_1.default.join(__dirname, 'uploads', req.file.filename);
@@ -166,7 +168,7 @@ userRouter.post('/upload/exercise:userId', upload.single('file'), (req, res) => 
         res.status(500).send("Error in uploading the data");
     }
 }));
-userRouter.get('/download/diet:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/download/diet:userId', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     try {
         const diet = yield prisma.diet.findUnique({
@@ -184,7 +186,7 @@ userRouter.get('/download/diet:userId', (req, res) => __awaiter(void 0, void 0, 
         res.status(500).send("Error in downloading the data");
     }
 }));
-userRouter.get('/download/exercise:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+userRouter.get('/download/exercise:userId', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     try {
         const exercise = yield prisma.exercise.findUnique({

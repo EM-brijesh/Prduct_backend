@@ -3,22 +3,18 @@ import { PrismaClient } from '@prisma/client';
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
-import authenticateToken  from './auth'
-
+import authenticateToken from './auth'
 const userRouter = express.Router();
 const prisma = new PrismaClient();
 const upload = multer({ dest: 'uploads/' });
 
 // Routes for Profile Creation basic info
 userRouter.post('/basicinfo',authenticateToken , async (req, res) => {
-    const { Email, Password, Name, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
+    const { age, height, weight, bodytype, Traininglevel, goal,  } = req.body;
     try {
         const user = await prisma.user.create({
+            //@ts-ignore
             data: {
-                Email: Email,
-                Password: Password,
-                username: username,
-                name: Name,
                 age: age,
                 height: height,
                 weight: weight,
@@ -92,29 +88,41 @@ userRouter.get('/personalrecords',authenticateToken , async (req, res) => {
 });
 
 // Routes to update basic info (age, height, weight, bodytype, Traininglevel, goal)
-userRouter.put('/update_basicinfo',authenticateToken , async (req, res) => {
-    const { Email, age, height, weight, bodytype, Traininglevel, goal, username } = req.body;
+//@ts-ignore
+userRouter.put('/update_basicinfo', authenticateToken, async (req, res) => {
+    const { age, height, weight, bodytype, traininglevel, goal } = req.body;
+//@ts-ignore
+    if (!req.user || !req.user.userId) {
+        return res.status(401).json({ message: 'Unauthorized: User not authenticated' });
+    }
+
+    // Validate input
+    if (age !== undefined && isNaN(age)) return res.status(400).json({ message: 'Age must be a number' });
+    if (height !== undefined && isNaN(height)) return res.status(400).json({ message: 'Height must be a number' });
+    if (weight !== undefined && isNaN(weight)) return res.status(400).json({ message: 'Weight must be a number' });
+
     try {
-        const user = await prisma.user.update({
-            where: {
-                username: username
-            },
+        const updatedUser = await prisma.user.update({
+            //@ts-ignore
+            where: { Email: req.user.userId },  // Use `Email` as per schema
             data: {
-                age: age,
-                height: height,
-                weight: weight,
-                bodytype: bodytype,
-                traininglevel: Traininglevel,
-                goal: goal,
+                ...(age !== undefined && { age }),
+                ...(height !== undefined && { height }),
+                ...(weight !== undefined && { weight }),
+                ...(bodytype !== undefined && { bodytype }),
+                ...(traininglevel !== undefined && { traininglevel }),
+                ...(goal !== undefined && { goal }),
             },
         });
-        res.status(200).json(user);
-        console.log("User updated successfully");
+
+        console.log("User updated successfully:", updatedUser);
+        res.status(200).json({ message: 'User updated successfully', user: updatedUser });
     } catch (error) {
-        console.log(error);
-        res.status(500).send("Error in updating the data");
+        console.error('Error updating user:', error);
+        res.status(500).json({ message: 'Error updating user' });
     }
 });
+
 
 //pdf_routes for diet & Exercise
 userRouter.post('/upload/diet:userId',authenticateToken , upload.single('file'), async (req, res) => {
@@ -195,4 +203,4 @@ userRouter.get('/download/exercise:userId',authenticateToken , async (req, res) 
 });
 
 export default userRouter;
-
+ 

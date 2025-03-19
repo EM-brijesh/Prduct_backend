@@ -7,9 +7,11 @@ const express_1 = __importDefault(require("express"));
 const users_1 = __importDefault(require("./users"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const auth_1 = __importDefault(require("./auth"));
+const cors_1 = __importDefault(require("cors"));
 console.log("Project Initialized");
 const app = (0, express_1.default)();
 const port = 3000;
+app.use((0, cors_1.default)());
 app.use(body_parser_1.default.json());
 app.get('/test_route', (req, res) => {
     res.send('Working');
