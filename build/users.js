@@ -44,19 +44,38 @@ userRouter.post('/basicinfo', auth_1.default, (req, res) => __awaiter(void 0, vo
     }
 }));
 // Get my profile route
+//@ts-ignore
 userRouter.get('/profile', auth_1.default, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { username } = req.body;
     try {
+        // Assuming user info is available in the token payload (email, username)
+        //@ts-ignore
+        const { email } = req.user;
+        // Retrieve the user from the database using email from the token
         const user = yield prisma.user.findUnique({
-            where: {
-                username: username
-            }
+            where: { Email: email },
         });
-        res.json(user);
+        if (!user) {
+            //@ts-ignore
+            return res.status(404).json({ error: 'User not found' });
+        }
+        // Send back the user details (excluding password)
+        //@ts-ignore
+        res.json({
+            email: user.Email,
+            username: user.username,
+            name: user.name,
+            age: user.age,
+            height: user.height,
+            weight: user.weight,
+            bodytype: user.bodytype,
+            traininglevel: user.traininglevel,
+            goal: user.goal,
+        });
     }
     catch (error) {
-        console.error(error);
-        res.status(500).send("Error retrieving user");
+        console.error('Error fetching user info:', error);
+        //@ts-ignore
+        res.status(500).json({ error: 'Error fetching user info' });
     }
 }));
 // Get leaderboard route

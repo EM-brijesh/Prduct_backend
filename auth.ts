@@ -1,5 +1,5 @@
 // src/index.ts
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
@@ -97,6 +97,11 @@ authRouter.post('/signin', async (req: Request, res: Response) => {
   }
 });
 
+
+
+
+
+
 /**
  * Middleware to Protect Routes
  * Verifies JWT token passed in the Authorization header.
@@ -115,6 +120,7 @@ const authenticateToken = (
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
+    console.log(user, token, JWT_SECRET);
     if (err) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
@@ -128,10 +134,55 @@ const authenticateToken = (
 /**
  * Example Protected Route
  */
+// New Protected Route to Get User Info
+//@ts-ignore
+authRouter.get('/userinfo',[] ,authenticateToken, async (req: Request, res: Response) => {
+  try {
+    // Assuming user info is available in the token payload (email, username)
+    //@ts-ignore
+    const { email } = req.user;
+
+    // Retrieve the user from the database using email from the token
+    const user = await prisma.user.findUnique({
+      where: { Email: email },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Send back the user details (excluding password)
+    res.json({
+      email: user.Email,
+      username: user.username,
+      name: user.name,
+      age: user.age,
+      height: user.height,
+      weight: user.weight,
+      bodytype: user.bodytype,
+      traininglevel: user.traininglevel,
+      goal: user.goal,
+      memberSince: user.JoinDate,
+      currentbadge: user.CurrentBadge
+    });
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    res.status(500).json({ error: 'Error fetching user info' });
+  }
+});
+
+
+
+
+
 //@ts-ignore
 authRouter.get('/protected', authenticateToken, (req: Request, res: Response) => {
   //@ts-ignore
   res.json({ message: 'This is a protected route', user: req.user });
 });
+
+// test Route
+
+
 export default authRouter;
 

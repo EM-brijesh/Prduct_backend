@@ -95,6 +95,7 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ error: 'Access token missing' });
     }
     jsonwebtoken_1.default.verify(token, JWT_SECRET, (err, user) => {
+        console.log(user, token, JWT_SECRET);
         if (err) {
             return res.status(403).json({ error: 'Invalid or expired token' });
         }
@@ -107,9 +108,44 @@ const authenticateToken = (req, res, next) => {
 /**
  * Example Protected Route
  */
+// New Protected Route to Get User Info
+//@ts-ignore
+authRouter.get('/userinfo', [], authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Assuming user info is available in the token payload (email, username)
+        //@ts-ignore
+        const { email } = req.user;
+        // Retrieve the user from the database using email from the token
+        const user = yield prisma.user.findUnique({
+            where: { Email: email },
+        });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        // Send back the user details (excluding password)
+        res.json({
+            email: user.Email,
+            username: user.username,
+            name: user.name,
+            age: user.age,
+            height: user.height,
+            weight: user.weight,
+            bodytype: user.bodytype,
+            traininglevel: user.traininglevel,
+            goal: user.goal,
+            memberSince: user.JoinDate,
+            currentbadge: user.CurrentBadge
+        });
+    }
+    catch (error) {
+        console.error('Error fetching user info:', error);
+        res.status(500).json({ error: 'Error fetching user info' });
+    }
+}));
 //@ts-ignore
 authRouter.get('/protected', authenticateToken, (req, res) => {
     //@ts-ignore
     res.json({ message: 'This is a protected route', user: req.user });
 });
+// test Route
 exports.default = authRouter;
