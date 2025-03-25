@@ -23,34 +23,58 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const SALT_ROUNDS = 10;
-/**
- * Sign-up Endpoint
- * Creates a new user with hashed password.
- */
+const trainingLevels = {
+    sedentary: 1.2,
+    lightlyActive: 1.375,
+    moderatelyActive: 1.55,
+    veryActive: 1.725,
+    extraActive: 1.9,
+};
+//@ts-ignore
 authRouter.post('/signup', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, username, password, name, age, height, weight, bodytype, traininglevel, goal, } = req.body;
     try {
-        // Hash the provided password
+        // Check if user already exists
+        const existingUser = yield prisma.user.findUnique({
+            where: { Email: email },
+        });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Email already in use' });
+        }
+        // Hash the password
         const hashedPassword = yield bcrypt_1.default.hash(password, SALT_ROUNDS);
+        // Calculate BMR (Basal Metabolic Rate)
+        const BMR = 10 * weight + 6.25 * height - 5 * age + 5;
+        // Get activity multiplier
+        const activityLevelMultiplier = trainingLevels[traininglevel.toLowerCase()];
+        if (!activityLevelMultiplier) {
+            return res.status(400).json({ error: 'Invalid training level provided' });
+        }
+        // Calculate daily calorie needs
+        const calories = Math.round(BMR * activityLevelMultiplier);
         // Create a new user in the database
         const user = yield prisma.user.create({
             data: {
-                Email: email, // primary key field
-                username: username,
+                Email: email, // Primary key
+                username,
                 Password: hashedPassword,
-                name: name,
-                age: age,
-                height: height,
-                weight: weight,
-                bodytype: bodytype,
-                traininglevel: traininglevel,
-                goal: goal,
+                name,
+                age,
+                height,
+                weight,
+                bodytype,
+                traininglevel,
+                goal,
+                calories, // Save calculated calories
             },
         });
         res.status(201).json({ message: 'User created successfully', user });
     }
     catch (error) {
         console.error('Error during signup:', error);
+        if (error.code === 'P2002') {
+            return res.status(400).json({ error: 'Email or username already exists' });
+        }
         res.status(500).json({ error: 'Error creating user' });
     }
 }));

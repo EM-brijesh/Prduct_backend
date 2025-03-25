@@ -62,6 +62,7 @@ userRouter.get('/profile', authenticateToken, async (req: Request, res: Response
       bodytype: user.bodytype,
       traininglevel: user.traininglevel,
       goal: user.goal,
+      calories: user.calories,
     });
   } catch (error) {
     console.error('Error fetching user info:', error);

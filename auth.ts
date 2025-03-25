@@ -15,10 +15,14 @@ app.use(express.json());
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 const SALT_ROUNDS = 10;
 
-/**
- * Sign-up Endpoint
- * Creates a new user with hashed password.
- */
+const trainingLevels: Record<string, number> = {
+  sedentary: 1.2,
+  lightlyActive: 1.375,
+  moderatelyActive: 1.55,
+  veryActive: 1.725,
+  extraActive: 1.9,
+};
+//@ts-ignore
 authRouter.post('/signup', async (req: Request, res: Response) => {
   const {
     email,
@@ -34,28 +38,56 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    // Hash the provided password
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { Email: email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // Calculate BMR (Basal Metabolic Rate)
+    const BMR = 10 * weight + 6.25 * height - 5 * age + 5;
+
+    // Get activity multiplier
+    const activityLevelMultiplier = trainingLevels[traininglevel.toLowerCase()];
+
+    if (!activityLevelMultiplier) {
+      return res.status(400).json({ error: 'Invalid training level provided' });
+    }
+
+    // Calculate daily calorie needs
+    const calories = Math.round(BMR * activityLevelMultiplier);
 
     // Create a new user in the database
     const user = await prisma.user.create({
       data: {
-        Email: email, // primary key field
-        username: username,
+        Email: email, // Primary key
+        username,
         Password: hashedPassword,
-        name: name,
-        age: age,
-        height: height,
-        weight: weight,
-        bodytype: bodytype,
-        traininglevel: traininglevel,
-        goal: goal,
+        name,
+        age,
+        height,
+        weight,
+        bodytype,
+        traininglevel,
+        goal,
+        calories, // Save calculated calories
       },
     });
 
     res.status(201).json({ message: 'User created successfully', user });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during signup:', error);
+    
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: 'Email or username already exists' });
+    }
+
     res.status(500).json({ error: 'Error creating user' });
   }
 });

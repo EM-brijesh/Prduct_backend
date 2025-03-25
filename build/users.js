@@ -70,6 +70,7 @@ userRouter.get('/profile', auth_1.default, (req, res) => __awaiter(void 0, void 
             bodytype: user.bodytype,
             traininglevel: user.traininglevel,
             goal: user.goal,
+            calories: user.calories,
         });
     }
     catch (error) {

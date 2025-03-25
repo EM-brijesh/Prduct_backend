@@ -25,6 +25,7 @@ model User {
   bodytype String 
   traininglevel String
   goal String
+  calories Int
   JoinDate DateTime @default(now())
   CurrentBadge String @default("Noobie")
   Journey String[]

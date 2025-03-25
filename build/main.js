@@ -8,6 +8,7 @@ const users_1 = __importDefault(require("./users"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const auth_1 = __importDefault(require("./auth"));
 const cors_1 = __importDefault(require("cors"));
+const gpt_1 = __importDefault(require("./gpt"));
 console.log("Project Initialized");
 const app = (0, express_1.default)();
 const port = 3000;
@@ -20,4 +21,5 @@ app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
 app.use('/auth', auth_1.default);
+app.use('/gpt', gpt_1.default);
 app.use('/users', users_1.default);

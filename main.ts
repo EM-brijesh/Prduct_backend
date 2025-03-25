@@ -2,7 +2,9 @@ import express from 'express';
 import userRouter from './users';
 import bodyParser from 'body-parser';
 import authRouter from './auth';
+
 import cors from 'cors';
+import gptRouter from './gpt';
 
 console.log("Project Initialized");
 const app = express();
@@ -19,5 +21,5 @@ app.listen(port, () => {
 });
 
 app.use('/auth' , authRouter)
-
+app.use('/gpt' , gptRouter)
 app.use('/users', userRouter);
