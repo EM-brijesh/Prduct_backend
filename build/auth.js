@@ -12,6 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.authenticateToken = void 0;
 // src/index.ts
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -129,12 +130,13 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+exports.authenticateToken = authenticateToken;
 /**
  * Example Protected Route
  */
 // New Protected Route to Get User Info
 //@ts-ignore
-authRouter.get('/userinfo', [], authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+authRouter.get('/userinfo', [], exports.authenticateToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // Assuming user info is available in the token payload (email, username)
         //@ts-ignore
@@ -167,7 +169,7 @@ authRouter.get('/userinfo', [], authenticateToken, (req, res) => __awaiter(void 
     }
 }));
 //@ts-ignore
-authRouter.get('/protected', authenticateToken, (req, res) => {
+authRouter.get('/protected', exports.authenticateToken, (req, res) => {
     //@ts-ignore
     res.json({ message: 'This is a protected route', user: req.user });
 });

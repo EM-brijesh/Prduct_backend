@@ -138,7 +138,7 @@ authRouter.post('/signin', async (req: Request, res: Response) => {
  * Middleware to Protect Routes
  * Verifies JWT token passed in the Authorization header.
  */
-const authenticateToken = (
+export const authenticateToken = (
   req: Request,
   res: Response,
   next: NextFunction
